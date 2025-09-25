@@ -40,12 +40,11 @@ parameters:
 
 steps:
   - ${{ if eq(parameters.WithConfigTransform, 'true') }}:
-      - task: FileTransform@1
+      - task: FileTransform@2
         displayName: 'Update SPFx configuration files'
         inputs:
           folderPath: '${{ parameters.SPFxProjectRoot }}/config'
-          fileType: json
-          targetFiles: 'package-solution.json'
+          jsonTargetFiles: 'package-solution.json'
 
   - template: ../js/build.yml
     parameters:
