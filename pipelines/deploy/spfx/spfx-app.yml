@@ -76,20 +76,26 @@ steps:
   - ${{ if ne(parameters.certificateFile, '') }}:
       - script: |
           m365 login --appId ${{ parameters.aadClientId }} --tenant ${{ parameters.aadTenantId }} --authType certificate --certificateFile $(deploymentCertificate.secureFilePath)
-        displayName: 'Connect to SharePoint Online'
+        displayName: 'Connect to SharePoint Online (secure file)'
   - ${{ elseif ne(parameters.certificateFilePath, '') }}:
       - script: |
           m365 login --appId ${{ parameters.aadClientId }} --tenant ${{ parameters.aadTenantId }} --authType certificate --certificateFile ${{ parameters.certificateFilePath }}
-        displayName: 'Connect to SharePoint Online'
+        displayName: 'Connect to SharePoint Online (certificate file path)'
   - ${{ elseif ne(parameters.certificateBase64Encoded, '') }}:
       - script: |
-          m365 login --appId ${{ parameters.aadClientId }} --tenant ${{ parameters.aadTenantId }} --authType certificate --certificateBase64Encoded ${{ parameters.certificateBase64Encoded }} 
-        displayName: "Connect to SharePoint Online"
+          printf "%s" "${{ parameters.certificateBase64Encoded }}" > "$(Agent.TempDirectory)/cert.pem"
+
+          m365 login \
+            --appId "${{ parameters.aadClientId }}" \
+            --tenant "${{ parameters.aadTenantId }}" \
+            --authType certificate \
+            --certificateFile "$(Agent.TempDirectory)/cert.pem"
+        displayName: "Connect to SharePoint Online (base64 encoded certificate)"
   - ${{ else }}:
       - script: |
           echo "No authentication certificate specified."
           exit 1
-        displayName: 'Connect to SharePoint Online'
+        displayName: 'Connect to SharePoint Online (failed)'
 
   - script: |
       m365 spo app add \
