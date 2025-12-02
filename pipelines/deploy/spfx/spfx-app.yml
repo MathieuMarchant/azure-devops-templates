@@ -30,6 +30,10 @@ parameters:
     type: string
     default: ''
     displayName: 'Base64-encoded string with certificate private key'
+  - name: certificatePassword
+    type: string
+    default: ''
+    displayName: 'Password for the certificate (if required, for PFX)'
   - name: aadClientId
     type: string
     displayName: "Azure AD deployment application's client ID."
@@ -81,6 +85,17 @@ steps:
       - script: |
           m365 login --appId ${{ parameters.aadClientId }} --tenant ${{ parameters.aadTenantId }} --authType certificate --certificateFile ${{ parameters.certificateFilePath }}
         displayName: 'Connect to SharePoint Online (certificate file path)'
+  - ${{ elseif and(ne(parameters.certificateBase64Encoded, ''), ne(parameters.certificatePassword, '')) }}:
+      - script: |
+          printf "%s" "${{ parameters.certificateBase64Encoded }}" > "$(Agent.TempDirectory)/cert.pfx"
+
+          m365 login \
+            --appId "${{ parameters.aadClientId }}" \
+            --tenant "${{ parameters.aadTenantId }}" \
+            --authType certificate \
+            --certificateFile "$(Agent.TempDirectory)/cert.pfx" \
+            --password "${{ parameters.certificatePassword }}"
+        displayName: "Connect to SharePoint Online (base64 PFX certificate)"
   - ${{ elseif ne(parameters.certificateBase64Encoded, '') }}:
       - script: |
           printf "%s" "${{ parameters.certificateBase64Encoded }}" > "$(Agent.TempDirectory)/cert.pem"
@@ -90,7 +105,7 @@ steps:
             --tenant "${{ parameters.aadTenantId }}" \
             --authType certificate \
             --certificateFile "$(Agent.TempDirectory)/cert.pem"
-        displayName: "Connect to SharePoint Online (base64 encoded certificate)"
+        displayName: "Connect to SharePoint Online (base64 PEM certificate)"
   - ${{ else }}:
       - script: |
           echo "No authentication certificate specified."
